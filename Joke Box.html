@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Joke Box</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fraunces:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1033;
+    --panel: #241849;
+    --ink: #f4efe6;
+    --ink-dim: #c9bfe0;
+    --zing: #ffd23f;
+    --zing-dim: #e0b82e;
+    --pink: #ff6fae;
+    --border: #3a2a66;
+    font-size: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Space Grotesk', sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    display: flex;
+    justify-content: center;
+    min-height: 100%;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 560px;
+    padding: 2.5rem 1.5rem 3rem;
+  }
+  header { margin-bottom: 1.75rem; }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: clamp(2.2rem, 8vw, 3rem);
+    margin: 0 0 0.3rem;
+    line-height: 1;
+    color: var(--zing);
+  }
+  header p { margin: 0; color: var(--ink-dim); font-size: 0.95rem; }
+
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.75rem;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    margin-bottom: 1.25rem;
+  }
+  .stage p {
+    font-size: 1.15rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .stage.empty p { color: var(--ink-dim); font-style: italic; }
+
+  .row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  button {
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 0.7rem 1.3rem;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  button:active { transform: scale(0.96); }
+  .btn-primary { background: var(--zing); color: #1a1033; }
+  .btn-primary:hover { background: var(--zing-dim); }
+  .btn-secondary { background: transparent; color: var(--ink); border-color: var(--border); }
+  .btn-secondary:hover { border-color: var(--pink); color: var(--pink); }
+  .btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .add-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+  .add-form input {
+    flex: 1;
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.65rem 1.1rem;
+    color: var(--ink);
+  }
+  .add-form input::placeholder { color: var(--ink-dim); }
+  .add-form input:focus { outline: none; border-color: var(--pink); }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: var(--pink);
+    margin: 0 0 0.8rem;
+  }
+  .favs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+  .favs li {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .favs .empty-note { color: var(--ink-dim); font-style: italic; border-style: dashed; }
+
+  .toast {
+    position: fixed;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--ink);
+    color: #1a1033;
+    padding: 0.6rem 1.2rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #fff7ec;
+      --panel: #ffffff;
+      --ink: #241849;
+      --ink-dim: #7a6f99;
+      --border: #e8ddc8;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Joke Box</h1>
+    <p>Pull the lever. Hoard the gems.</p>
+  </header>
+
+  <div class="stage empty" id="stage">
+    <p id="stageText">Tap "Tell a joke" to get started.</p>
+  </div>
+
+  <div class="row">
+    <button class="btn-primary" id="tellBtn">🎲 Tell a joke</button>
+    <button class="btn-secondary" id="favBtn" disabled>★ Save to favorites</button>
+  </div>
+
+  <form class="add-form" id="addForm">
+    <input type="text" id="addInput" placeholder="Got a joke? Add it to the box…" maxlength="280">
+    <button class="btn-secondary" type="submit">Add</button>
+  </form>
+
+  <section>
+    <h2>Favorites</h2>
+    <ul class="favs" id="favList"></ul>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const STARTER_JOKES = [
+    "Why do programmers prefer dark mode? Because light attracts bugs.",
+    "Why did the Python programmer wear glasses? Because he couldn't C.",
+    "Why was the computer cold? It left its Windows open.",
+    "I told my computer I needed a break. Now it won't stop sending me Kit-Kat ads."
+  ];
+
+  function load() {
+    try {
+      const raw = localStorage.getItem('jokebox');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { jokes: STARTER_JOKES.slice(), favorites: [] };
+  }
+
+  function save() {
+    try {
+      localStorage.setItem('jokebox', JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  let state = load();
+  let current = null;
+
+  const stage = document.getElementById('stage');
+  const stageText = document.getElementById('stageText');
+  const tellBtn = document.getElementById('tellBtn');
+  const favBtn = document.getElementById('favBtn');
+  const addForm = document.getElementById('addForm');
+  const addInput = document.getElementById('addInput');
+  const favList = document.getElementById('favList');
+  const toast = document.getElementById('toast');
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), 1600);
+  }
+
+  function renderFavorites() {
+    favList.innerHTML = '';
+    if (state.favorites.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'empty-note';
+      li.textContent = 'No favorites yet — save a joke you like.';
+      favList.appendChild(li);
+      return;
+    }
+    state.favorites.forEach(j => {
+      const li = document.createElement('li');
+      li.textContent = j;
+      favList.appendChild(li);
+    });
+  }
+
+  function tellJoke() {
+    if (state.jokes.length === 0) {
+      stageText.textContent = "The box is empty. Add a joke first.";
+      stage.classList.add('empty');
+      favBtn.disabled = true;
+      return;
+    }
+    current = state.jokes[Math.floor(Math.random() * state.jokes.length)];
+    stageText.textContent = current;
+    stage.classList.remove('empty');
+    favBtn.disabled = false;
+  }
+
+  tellBtn.addEventListener('click', tellJoke);
+
+  favBtn.addEventListener('click', () => {
+    if (!current) return;
+    if (state.favorites.includes(current)) {
+      showToast('Already in favorites');
+      return;
+    }
+    state.favorites.push(current);
+    save();
+    renderFavorites();
+    showToast('Saved to favorites');
+  });
+
+  addForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = addInput.value.trim();
+    if (!text) return;
+    state.jokes.push(text);
+    save();
+    addInput.value = '';
+    showToast('Joke added to the box');
+  });
+
+  renderFavorites();
+</script>
+</body>
+</html>
